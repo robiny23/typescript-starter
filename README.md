@@ -7,14 +7,13 @@ Retrieve a task by its id
 Delete a task by its id
 MergeAll task for a user
 
-
 ## Installation
 
 To install <Project_Name>, follow these steps:
 
 ```bash
 git clone https://github.com/robiny23/typescript-starter.git
-cd <Project_Name>
+cd typescript-starter
 npm install
 ```
 
