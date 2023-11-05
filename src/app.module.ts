@@ -5,10 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventModule } from './events/event.module'; 
 import { Event } from './events/event.entity'; 
 import { EventController } from './events/event.controller';
-import { EventService } from './events/event.service'; 
 import { User } from './users/user.entity'; 
-import { UserController } from './users/user.controller'; 
-import { UserService } from './users/user.service'; 
+import { UserController } from './users/user.controller';  
 import { UserModule } from './users/user.module'; 
 @Module({
   imports: [

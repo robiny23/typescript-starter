@@ -8,9 +8,8 @@ import { CreateEventDto } from './dto/create-event.dto'
 export class EventService {
     constructor(
         @InjectRepository(Event)
-        private eventRepository: Repository<Event>, // This is the correct way to inject.
+        private eventRepository: Repository<Event>, 
         private userService: UserService,
-        private dataSource: DataSource,
     ) { }
 
     // find all events
@@ -23,15 +22,14 @@ export class EventService {
         // Create a new instance of the event
         const event = this.eventRepository.create({
             ...eventData,
-            invitees: undefined, // We will set this separately
+            invitees: undefined, //to be set separately
         });
-        //console.log('Received invitee IDs:', eventData.invitees); // Log the received invitee IDs
+        
         let invitees = [];
 
-        // If invitees are provided, we need to retrieve and set them
+        // If invitees are provided, retrieve and set them
         if (eventData.invitees && eventData.invitees.length > 0) {
             invitees = await this.userService.findUsersByIds(eventData.invitees);
-            //console.log('Fetched invitee entities:', invitees); // Log the fetched invitee entities
             event.invitees = invitees;
         }
         const savedEvent = await this.eventRepository.save(event)
@@ -58,7 +56,6 @@ export class EventService {
         // Pass the options directly to the findOne method
         const event = await this.eventRepository.findOne({ where: { id: id }, ...options });
         if (!event) {
-            //console.log(`Event with ID ${id} not found.`);
             throw new NotFoundException(`Event with ID ${id} not found.`);
         }
         return event;
@@ -109,13 +106,7 @@ export class EventService {
                 if (userEvents[i].endTime > userEvents[j].startTime) {
                     console.log(`Overlap detected, merging events with IDs: ${userEvents[i].id} and ${userEvents[j].id}`);
 
-                    // Collect all unique invitees from both events
-                    //console.log(`Event ${i} invitees:`, userEvents[i].invitees);
-                    //console.log(`Event ${j} invitees:`, userEvents[j].invitees);
-
                     const allInvitees = Array.from(new Set([...userEvents[i].invitees, ...userEvents[j].invitees]));
-
-                    //console.log(`All combined invitees:`, allInvitees);
 
                     // Create new merged event object
                     const newMergedEvent = new Event(); // Assuming Event is a class with a constructor

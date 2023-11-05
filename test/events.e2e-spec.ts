@@ -7,7 +7,7 @@ describe('EventsController (e2e)', () => {
     let app: INestApplication;
     let eventId;
     let userId = 1;
-    // Same setup as before
+    
     beforeAll(async () => {
         const moduleFixture = await Test.createTestingModule({
             imports: [AppModule],
