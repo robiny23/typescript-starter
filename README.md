@@ -7,7 +7,6 @@ Retrieve a task by its id
 Delete a task by its id
 MergeAll task for a user
 
-
 ## Installation
 
 To install <Project_Name>, follow these steps:
