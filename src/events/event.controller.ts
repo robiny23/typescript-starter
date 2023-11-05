@@ -23,8 +23,8 @@ export class EventController {
         return this.eventService.create(createEventDto);
     }
     @Get(':id')
-    findById(@Param('id') id: number): Promise<Event> {
-        return this.eventService.findById(id);
+    async findById(@Param('id') id: number): Promise<Event> {
+        return await this.eventService.findById(id);
     }
 
     @Delete('delete/:id')
@@ -33,7 +33,7 @@ export class EventController {
     }
 
 
-    @Post('mergeall/:userId')
+    @Post('mergeAll/:userId')
     async mergeAll(@Param('userId') userId: number): Promise<Event[]> {
         return this.eventService.mergeAll(userId);
     }
