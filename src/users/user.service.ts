@@ -2,8 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { Event } from '../events/event.entity';
-import { EventService } from '../events/event.service';
 import { CreateUserDto } from './dto/create-user.dto'; // DTO import
 
 @Injectable()
@@ -12,9 +10,6 @@ export class UserService {
         @InjectRepository(User)
         private userRepository: Repository<User>,
         
-        //@InjectRepository(Event)
-        //private eventRepository: Repository<Event>,
-        //private readonly eventService: EventService,
     ) {}
 
     findAll(): Promise<User[]> {

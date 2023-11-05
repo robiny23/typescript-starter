@@ -11,12 +11,6 @@ export class EventController {
     findAll(): Promise<Event[]> {
         return this.eventService.findAll();
     }
-/*
-    @Post()
-    create(@Body() eventData: Partial<Event>): Promise<Event> {
-        return this.eventService.create(eventData);
-    }
-*/
 
     @Post()
     create(@Body() createEventDto: CreateEventDto): Promise<Event> {
@@ -38,21 +32,4 @@ export class EventController {
         return this.eventService.mergeAll(userId);
     }
 
-    /*
-    @Post(':eventId/invitees/:userId')
-    async addInviteeToEvent(
-        @Param('eventId') eventId: number,
-        @Param('userId') userId: number
-    ) {
-        return this.eventService.addInvitee(eventId, userId);
-    }
-
-    @Delete(':eventId/invitees/:userId')
-    async removeInviteeFromEvent(
-        @Param('eventId') eventId: number,
-        @Param('userId') userId: number
-    ) {
-        return this.eventService.removeInvitee(eventId, userId);
-    }
-*/
 }

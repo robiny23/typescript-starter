@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
-import { Event } from '../events/event.entity';
 
 @Entity()
 export class User {
@@ -11,8 +10,5 @@ export class User {
 
     @Column({ type: 'simple-array', nullable: true})
     events: string[];
-/*
-    @ManyToMany(() => Event, event => event.invitees)
-    invitedEvents: Event[]; // create relational mapping to Event
-    */
+
 }

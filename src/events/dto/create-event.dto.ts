@@ -27,5 +27,4 @@ export class CreateEventDto {
     @IsNumber({}, { each: true })
     @Type(() => Number)
     invitees: number[];
-    // invitees are not included in the Create DTO since they are typically set through a different mechanism
 }
