@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Event } from './event.entity'; 
-import { Repository } from 'typeorm';
+import { Repository, FindOneOptions } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
 import { UserService } from '../users/user.service';
@@ -26,41 +26,35 @@ export class EventService {
             invitees: undefined, // We will set this separately
         });
         //console.log('Received invitee IDs:', eventData.invitees); // Log the received invitee IDs
-      
+        let invitees = [];
+        
         // If invitees are provided, we need to retrieve and set them
         if (eventData.invitees && eventData.invitees.length > 0) {
-            const invitees = await this.userService.findUsersByIds(eventData.invitees);
+            invitees = await this.userService.findUsersByIds(eventData.invitees);
             //console.log('Fetched invitee entities:', invitees); // Log the fetched invitee entities
             event.invitees = invitees;
             
-            /*
-            // Add this event to each user's invitedEvents
-            for (const user of invitees) {
-                if (!user.invitedEvents) {
-                user.invitedEvents = [];
-                }
-                user.invitedEvents.push(event);
-                await this.userService.save(user); // Assuming there's a save method in userService
-            }
-            */
+            // Add this event to each user's events: string[]
+            
         }
-        
-        return await this.eventRepository.save(event);
+        const savedEvent = await this.eventRepository.save(event)
+        for (const user of invitees) {
+                await this.userService.addEventToUser(user.id, savedEvent.id);
+            }
+        return savedEvent;
     }
 
     // Retrieve an event by its ID
-    async findById(id: number): Promise<Event | null> {
+    async findById(id: number, options?: FindOneOptions<Event>): Promise<Event | null> {
         try {
-            const event = await this.eventRepository.findOne({ where: { id: id } });
+            // Pass the options directly to the findOne method
+            const event = await this.eventRepository.findOne({ where: { id: id }, ...options });
             if (!event) {
-                // You can throw an error or simply return null to indicate not found
                 console.log(`Event with ID ${id} not found.`);
                 return null;
             }
-            // Optionally, perform any additional processing on the event before returning
             return event;
         } catch (error) {
-            // Handle or log the error as needed
             console.error(`An error occurred while retrieving event with ID ${id}:`, error);
             throw new Error('Unable to retrieve event.');
         }
@@ -69,15 +63,23 @@ export class EventService {
 
     // Delete an event by its ID
     async deleteById(id: number): Promise<{ deleted: boolean; id?: number }> {
-        const event = await this.findById(id);
+        const event = await this.findById(id, { relations: ['invitees'] });
         if (!event) {
             return { deleted: false };
         }
-
+    
+        // Remove event from each user's list
+        if (event.invitees && event.invitees.length > 0) {
+            await Promise.all(event.invitees.map(user => 
+                this.userService.removeEventFromUser(user.id, id)
+            ));
+        }
+    
         await this.eventRepository.delete(id);
         console.log(`Event with ID ${id} deleted.`);
         return { deleted: true, id };
     }
+    
 
     async mergeAll(userId: number): Promise<Event[]> {
         // 1. Fetch all events for the user, sorted by start time.

@@ -48,41 +48,31 @@ export class UserService {
     async save(user: User): Promise<User> {
         return this.userRepository.save(user);
     }
-/*
+
     async addEventToUser(userId: number, eventId: number): Promise<User> {
         const user = await this.userRepository.findOneBy({ id: userId });
         if (!user) {
-          throw new NotFoundException(`User with ID ${userId} not found`);
+            throw new NotFoundException(`User with ID ${userId} not found`);
         }
     
-        const event = await this.eventRepository.findOneBy({ id: eventId });
-        if (!event) {
-          throw new NotFoundException(`Event with ID ${eventId} not found`);
-        }
-    
-        user.invitedEvents = Array.isArray(user.invitedEvents) ? [...user.invitedEvents, event] : [event];
+        // Add event ID as a string to the user's events array
+        user.events = Array.isArray(user.events) ? [...user.events, eventId.toString()] : [eventId.toString()];
         await this.userRepository.save(user);
         return user;
     }
+    
     
     async removeEventFromUser(userId: number, eventId: number): Promise<User> {
-        const user = await this.userRepository.findOne({
-          where: { id: userId },
-          relations: ['invitedEvents']
-        });
-    
+        const user = await this.userRepository.findOneBy({ id: userId });
         if (!user) {
-          throw new NotFoundException(`User with ID ${userId} not found`);
+            throw new NotFoundException(`User with ID ${userId} not found`);
         }
     
-        const eventIndex = user.invitedEvents.findIndex(e => e.id === eventId);
-        if (eventIndex === -1) {
-          throw new NotFoundException(`Event with ID ${eventId} not associated with user ID ${userId}`);
-        }
-    
-        user.invitedEvents.splice(eventIndex, 1);
+        // Remove event ID as a string from the user's events array
+        user.events = user.events.filter(eventIdStr => eventIdStr !== eventId.toString());
         await this.userRepository.save(user);
         return user;
     }
-    */
+    
+    
 }
