@@ -103,7 +103,7 @@ export class EventService {
             //console.log(`Event ${i} invitees:`, userEvents[i].invitees);
             for (let j = i + 1; j < userEvents.length; j++) {
                 // Check for overlap
-                if (userEvents[i].endTime > userEvents[j].startTime) {
+                if (userEvents[i].endTime >= userEvents[j].startTime) {
                     console.log(`Overlap detected, merging events with IDs: ${userEvents[i].id} and ${userEvents[j].id}`);
 
                     const allInvitees = Array.from(new Set([...userEvents[i].invitees, ...userEvents[j].invitees]));
