@@ -33,15 +33,23 @@ export class EventService {
         if (eventData.invitees && eventData.invitees.length > 0) {
             invitees = await this.userService.findUsersByIds(eventData.invitees);
             //console.log('Fetched invitee entities:', invitees); // Log the fetched invitee entities
-            event.invitees = invitees;
-            
-            // Add this event to each user's events: string[]
-            
+            event.invitees = invitees;  
         }
         const savedEvent = await this.eventRepository.save(event)
-        for (const user of invitees) {
-                await this.userService.addEventToUser(user.id, savedEvent.id);
-            }
+        // Ensure startTime and endTime are Date objects
+        const startTime = new Date(savedEvent.startTime);
+        const endTime = new Date(savedEvent.endTime);
+
+        // Format event string with ID and time
+        const formattedStartTime = startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true  });
+        const formattedEndTime = endTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true  });
+        const eventString = `${savedEvent.id} ${savedEvent.title}: ${formattedStartTime}-${formattedEndTime}`;
+
+        // Update each invitee's user events list with the new event string
+        for (const invitee of savedEvent.invitees) {
+            await this.userService.addEventToUser(invitee.id, eventString);
+        }
+
         return savedEvent;
     }
 

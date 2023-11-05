@@ -49,17 +49,20 @@ export class UserService {
         return this.userRepository.save(user);
     }
 
-    async addEventToUser(userId: number, eventId: number): Promise<User> {
+    // UserService method to add an event string to the user's events list
+    async addEventToUser(userId: number, eventString: string): Promise<User> {
         const user = await this.userRepository.findOneBy({ id: userId });
         if (!user) {
-            throw new NotFoundException(`User with ID ${userId} not found`);
+        throw new NotFoundException(`User with ID ${userId} not found`);
         }
     
-        // Add event ID as a string to the user's events array
-        user.events = Array.isArray(user.events) ? [...user.events, eventId.toString()] : [eventId.toString()];
+        // Add event string to the user's events array
+        user.events = Array.isArray(user.events) ? [...user.events, eventString] : [eventString];
         await this.userRepository.save(user);
+        
         return user;
     }
+  
     
     
     async removeEventFromUser(userId: number, eventId: number): Promise<User> {
@@ -68,8 +71,12 @@ export class UserService {
             throw new NotFoundException(`User with ID ${userId} not found`);
         }
     
-        // Remove event ID as a string from the user's events array
-        user.events = user.events.filter(eventIdStr => eventIdStr !== eventId.toString());
+        // Remove the event string that contains the eventId at the beginning
+        user.events = user.events.filter(eventString => {
+            const [eventStringId] = eventString.split(' '); // Get the first part of the string, which should be the event ID
+            return eventStringId !== eventId.toString(); // Keep the eventString if it does not start with the eventId
+        });
+
         await this.userRepository.save(user);
         return user;
     }
