@@ -20,7 +20,7 @@ import { UserModule } from './users/user.module';
       password: 'Password',
       database: 'nestjs_project',
       entities: [Event, User], // This pattern will look for all .ts and .js files that end with `.entity` in your project.
-      synchronize: true, // Set this to false in production, it auto creates the DB tables on every application launch.
+      "synchronize": true, // Set this to false in production, it auto creates the DB tables on every application launch.
     }),
     EventModule, 
     UserModule,

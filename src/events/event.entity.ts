@@ -38,6 +38,16 @@ export class Event {
     endTime: Date;
 
     @ManyToMany(() => User)
-    @JoinTable()
+    @JoinTable({
+        name: 'event_invitees_user', // Name of the junction table
+        joinColumn: {
+          name: 'event_id',
+          referencedColumnName: 'id',
+        },
+        inverseJoinColumn: {
+          name: 'user_id',
+          referencedColumnName: 'id',
+        },
+      }) 
     invitees: User[];
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Event } from './event.entity'; 
-import { Repository, FindOneOptions } from 'typeorm';
+import { Repository, FindOneOptions, DataSource, In } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
 import { UserService } from '../users/user.service';
@@ -11,6 +11,7 @@ export class EventService {
         @InjectRepository(Event)
         private eventRepository: Repository<Event>, // This is the correct way to inject.
         private userService: UserService,
+        private dataSource: DataSource,
     ) {}
 
     // find all events
@@ -80,55 +81,98 @@ export class EventService {
         return { deleted: true, id };
     }
     
-
     async mergeAll(userId: number): Promise<Event[]> {
-        // 1. Fetch all events for the user, sorted by start time.
-        const events = await this.eventRepository
+        console.log(`Starting mergeAll for user ID: ${userId}`);
+        // Filter out events that do not include the user.
+        const userEvents = await this.eventRepository
             .createQueryBuilder('event')
-            .leftJoinAndSelect('event.invitees', 'user')
-            .where('user.id = :userId', { userId })
+            .leftJoinAndSelect('event.invitees', 'invitee') // Left join to get all invitees
+            .where('event.id IN ' + 
+                   '(SELECT event.id FROM event ' +
+                   'LEFT JOIN event_invitees_user ON event_invitees_user.event_Id = event.id ' +
+                   'WHERE event_invitees_user.user_Id = :userId)', 
+                   { userId }) // Subquery to filter only events where the user is an invitee
             .orderBy('event.startTime', 'ASC')
             .getMany();
-            
-        if (!events.length) {
-            return null; // No events for this user.
-        }
-    
-        let mergedEvents = [];
-        let currentEvent = events[0];
-    
-        // 2. Iterate through the events and detect overlaps.
-        for (let i = 1; i < events.length; i++) {
-            if (currentEvent.endTime >= events[i].startTime) {
-                // Overlap detected
-    
-                // 3. Merge overlapping events.
-                currentEvent.endTime = new Date(Math.max(currentEvent.endTime.getTime(), events[i].endTime.getTime()));
 
-                // Combine invitees, removing duplicates.
-                currentEvent.invitees = Array.from(
-                    new Set([...currentEvent.invitees, ...events[i].invitees])
-                );
-            } else {
-                // No overlap
-                mergedEvents.push(currentEvent);
-                currentEvent = events[i];
+    
+            for (const event of userEvents) {
+                console.log({
+                  ...event,
+                  invitees: event.invitees.map(invitee => ({
+                    id: invitee.id,
+                    name: invitee.name, // Assuming 'name' is a field you want to log
+                    // Add any other fields you want to see from the User entity
+                  })),
+                });
+              }
+        
+        let mergedEvents: Event[] = [];
+        let eventsToDelete: Event[] = [];
+    
+        for (let i = 0; i < userEvents.length; i++) {
+            //console.log(`Event ${i} invitees:`, userEvents[i].invitees);
+            for (let j = i + 1; j < userEvents.length; j++) {
+                // Check for overlap
+                if (userEvents[i].endTime > userEvents[j].startTime) {
+                    console.log(`Overlap detected, merging events with IDs: ${userEvents[i].id} and ${userEvents[j].id}`);
+                    
+                    // Collect all unique invitees from both events
+                    console.log(`Event ${i} invitees:`, userEvents[i].invitees);
+                    console.log(`Event ${j} invitees:`, userEvents[j].invitees);
+
+                    const allInvitees = Array.from(new Set([...userEvents[i].invitees, ...userEvents[j].invitees]));
+
+                    console.log(`All combined invitees:`, allInvitees);
+
+                    // Create new merged event object
+                    const newMergedEvent = new Event(); // Assuming Event is a class with a constructor
+                    newMergedEvent.startTime = new Date(Math.min(userEvents[i].startTime.getTime(), userEvents[j].startTime.getTime()));
+                    newMergedEvent.endTime = new Date(Math.max(userEvents[i].endTime.getTime(), userEvents[j].endTime.getTime()));
+                    newMergedEvent.invitees = allInvitees;
+                    console.log(allInvitees, newMergedEvent.invitees);
+                    // Save the merged event
+                    const savedMergedEvent = await this.create(this.mergedEventToDTO(newMergedEvent));
+                    mergedEvents.push(savedMergedEvent);
+    
+                    // Mark old events for deletion
+                    eventsToDelete.push(userEvents[i], userEvents[j]);
+    
+                    // Avoid double processing
+                    i = j; // Skip to the event after j for the next iteration of i
+                    break; // Exit the inner loop
+                }
             }
         }
-        mergedEvents.push(currentEvent);
     
-        // 4. Save merged events and delete original events.
-        for (let event of events) {
-            await this.eventRepository.remove(event);
+        // Delete old events that were merged
+        for (let event of eventsToDelete) {
+            console.log(`Deleting event ID: ${event.id}`);
+            await this.deleteById(event.id);
         }
-    
-        for (let mergedEvent of mergedEvents) {
-            await this.eventRepository.save(mergedEvent);
-        }
-    
+        
+        console.log('Merge process completed.');
         return mergedEvents;
     }
-        
+    
+    
+      
+    private mergedEventToDTO(mergedEvent: Event): CreateEventDto {
+        // Convert your Event entity to the CreateEventDto format required by the create method.
+        // This is pseudocode and will depend on your actual CreateEventDto structure.
+        const { id, ...eventDataWithoutId } = mergedEvent;
+        console.log(mergedEvent.invitees.map(invitee => invitee.id));
+        // Now eventDataWithoutId does not contain the ID.
+        return {
+          ...eventDataWithoutId,
+          title: mergedEvent.title || 'E_merged',
+          invitees: mergedEvent.invitees.map(invitee => invitee.id),
+          
+          // Include any other transformations needed to match the DTO structure
+        };
+    }
+    
+ /*       
     async addInvitee(eventId: number, userId: number): Promise<void> {
         const event = await this.eventRepository.findOne({ where: { id: eventId }, relations: ['invitees'] });
         const user = await this.userService.findOne(userId);
@@ -184,6 +228,7 @@ export class EventService {
         // Return the updated user
         return user;
     }
+*/
     
 }
 

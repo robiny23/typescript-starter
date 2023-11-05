@@ -27,18 +27,18 @@ export class EventController {
         return this.eventService.findById(id);
     }
 
-    @Delete(':id')
+    @Delete('delete/:id')
     async deleteById(@Param('id') id: number): Promise<{ deleted: boolean; id?: number }> {
         return this.eventService.deleteById(id);
     }
 
 
-    @Post('mergeAll/:userId')
+    @Post('mergeall/:userId')
     async mergeAll(@Param('userId') userId: number): Promise<Event[]> {
         return this.eventService.mergeAll(userId);
     }
 
-    
+    /*
     @Post(':eventId/invitees/:userId')
     async addInviteeToEvent(
         @Param('eventId') eventId: number,
@@ -54,5 +54,5 @@ export class EventController {
     ) {
         return this.eventService.removeInvitee(eventId, userId);
     }
-
+*/
 }

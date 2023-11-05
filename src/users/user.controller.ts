@@ -17,7 +17,7 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
-  @Delete(':id')
+  @Delete('delete/:id')
   remove(@Param('id') id: number): Promise<void> {
     return this.userService.remove(id);
   }
