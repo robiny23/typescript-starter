@@ -1,54 +1,77 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
+import { Event } from '../events/event.entity';
 import { EventService } from '../events/event.service';
+import { CreateUserDto } from './dto/create-user.dto'; // DTO import
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectRepository(User)
-        private usersRepository: Repository<User>,
         private userRepository: Repository<User>,
-        private readonly eventService: EventService,
+        
+        //@InjectRepository(Event)
+        //private eventRepository: Repository<Event>,
+        //private readonly eventService: EventService,
     ) {}
 
     findAll(): Promise<User[]> {
-        return this.usersRepository.find();
+        return this.userRepository.find();
     }
 
     findOne(id: number): Promise<User> {
-        return this.usersRepository.findOne({ where: { id: id } });
+        return this.userRepository.findOne({ where: { id: id } });
+    }
+
+    async create(createUserDto: CreateUserDto): Promise<User> {
+        const newUser = this.userRepository.create(createUserDto);
+        return this.userRepository.save(newUser);
     }
 
     async remove(id: number): Promise<void> {
-        await this.usersRepository.delete(id);
+        await this.userRepository.delete(id);
     }
-
-    async getMergedEventStringsForUser(userId: number): Promise<string[]> {
-        const mergedEvents = await this.eventService.mergeAll(userId);
-        // Convert mergedEvents to a list of their IDs as strings
-        const eventStrings = mergedEvents.map(event => `${event.title}: ${event.startTime} - ${event.endTime}`);
-        return eventStrings;
+    
+    async save(user: User): Promise<User> {
+        return this.userRepository.save(user);
     }
-
-    async mergeEventsAndAssignToUser(userId: number): Promise<User> {
-        // Retrieve the user by ID
+/*
+    async addEventToUser(userId: number, eventId: number): Promise<User> {
         const user = await this.userRepository.findOneBy({ id: userId });
         if (!user) {
-          throw new Error('User not found');
+          throw new NotFoundException(`User with ID ${userId} not found`);
         }
     
-        // Merge events and get an array of event ID strings
-        const mergedEventStrings = await this.getMergedEventStringsForUser(userId);
+        const event = await this.eventRepository.findOneBy({ id: eventId });
+        if (!event) {
+          throw new NotFoundException(`Event with ID ${eventId} not found`);
+        }
     
-        // Update the user's events property
-        user.events = mergedEventStrings;
-    
-        // Save the updated user to the database
+        user.invitedEvents = Array.isArray(user.invitedEvents) ? [...user.invitedEvents, event] : [event];
         await this.userRepository.save(user);
-    
-        // Return the updated user
         return user;
     }
+    
+    async removeEventFromUser(userId: number, eventId: number): Promise<User> {
+        const user = await this.userRepository.findOne({
+          where: { id: userId },
+          relations: ['invitedEvents']
+        });
+    
+        if (!user) {
+          throw new NotFoundException(`User with ID ${userId} not found`);
+        }
+    
+        const eventIndex = user.invitedEvents.findIndex(e => e.id === eventId);
+        if (eventIndex === -1) {
+          throw new NotFoundException(`Event with ID ${eventId} not associated with user ID ${userId}`);
+        }
+    
+        user.invitedEvents.splice(eventIndex, 1);
+        await this.userRepository.save(user);
+        return user;
+    }
+    */
 }

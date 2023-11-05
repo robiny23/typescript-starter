@@ -1,9 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Param, Delete, Body } from '@nestjs/common';
 import { EventService } from './event.service';
 import { Event } from './event.entity';
-import { Post, Param, Delete, Body } from '@nestjs/common';
+import { CreateEventDto } from './dto/create-event.dto'; // DTO import
 
-@Controller('events') // This means all routes in this controller will start with "/events"
+@Controller('events') // set api routes
 export class EventController {
     constructor(private readonly eventService: EventService) {}
 
@@ -11,12 +11,17 @@ export class EventController {
     findAll(): Promise<Event[]> {
         return this.eventService.findAll();
     }
-
+/*
     @Post()
     create(@Body() eventData: Partial<Event>): Promise<Event> {
         return this.eventService.create(eventData);
     }
+*/
 
+    @Post()
+    create(@Body() createEventDto: CreateEventDto): Promise<Event> {
+        return this.eventService.create(createEventDto);
+    }
     @Get(':id')
     findById(@Param('id') id: number): Promise<Event> {
         return this.eventService.findById(id);
@@ -31,4 +36,22 @@ export class EventController {
     async mergeAll(@Param('userId') userId: number): Promise<Event[]> {
         return this.eventService.mergeAll(userId);
     }
+
+    
+    @Post(':eventId/invitees/:userId')
+    async addInviteeToEvent(
+        @Param('eventId') eventId: number,
+        @Param('userId') userId: number
+    ) {
+        return this.eventService.addInvitee(eventId, userId);
+    }
+
+    @Delete(':eventId/invitees/:userId')
+    async removeInviteeFromEvent(
+        @Param('eventId') eventId: number,
+        @Param('userId') userId: number
+    ) {
+        return this.eventService.removeInvitee(eventId, userId);
+    }
+
 }
