@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
 import { UserService } from '../users/user.service';
-
+import {CreateEventDto} from './dto/create-event.dto'
 @Injectable()
 export class EventService {
     constructor(
@@ -19,19 +19,64 @@ export class EventService {
     }
 
     // Create a new event
-    async create(eventData: Partial<Event>): Promise<Event> {
-        const newEvent = this.eventRepository.create(eventData);
-        return this.eventRepository.save(newEvent);
+    async create(eventData: CreateEventDto): Promise<Event> {
+        // Create a new instance of the event
+        const event = this.eventRepository.create({
+            ...eventData,
+            invitees: undefined, // We will set this separately
+        });
+        //console.log('Received invitee IDs:', eventData.invitees); // Log the received invitee IDs
+      
+        // If invitees are provided, we need to retrieve and set them
+        if (eventData.invitees && eventData.invitees.length > 0) {
+            const invitees = await this.userService.findUsersByIds(eventData.invitees);
+            //console.log('Fetched invitee entities:', invitees); // Log the fetched invitee entities
+            event.invitees = invitees;
+            
+            /*
+            // Add this event to each user's invitedEvents
+            for (const user of invitees) {
+                if (!user.invitedEvents) {
+                user.invitedEvents = [];
+                }
+                user.invitedEvents.push(event);
+                await this.userService.save(user); // Assuming there's a save method in userService
+            }
+            */
+        }
+        
+        return await this.eventRepository.save(event);
     }
 
     // Retrieve an event by its ID
-    findById(id: number): Promise<Event> {
-        return this.eventRepository.findOne({ where: { id: id } });
+    async findById(id: number): Promise<Event | null> {
+        try {
+            const event = await this.eventRepository.findOne({ where: { id: id } });
+            if (!event) {
+                // You can throw an error or simply return null to indicate not found
+                console.log(`Event with ID ${id} not found.`);
+                return null;
+            }
+            // Optionally, perform any additional processing on the event before returning
+            return event;
+        } catch (error) {
+            // Handle or log the error as needed
+            console.error(`An error occurred while retrieving event with ID ${id}:`, error);
+            throw new Error('Unable to retrieve event.');
+        }
     }
+    
 
     // Delete an event by its ID
-    deleteById(id: number): Promise<void> {
-        return this.eventRepository.delete(id).then(() => {});
+    async deleteById(id: number): Promise<{ deleted: boolean; id?: number }> {
+        const event = await this.findById(id);
+        if (!event) {
+            return { deleted: false };
+        }
+
+        await this.eventRepository.delete(id);
+        console.log(`Event with ID ${id} deleted.`);
+        return { deleted: true, id };
     }
 
     async mergeAll(userId: number): Promise<Event[]> {
@@ -81,7 +126,7 @@ export class EventService {
     
         return mergedEvents;
     }
-        // In your event.service.ts
+        
     async addInvitee(eventId: number, userId: number): Promise<void> {
         const event = await this.eventRepository.findOne({ where: { id: eventId }, relations: ['invitees'] });
         const user = await this.userService.findOne(userId);

@@ -28,9 +28,10 @@ export class EventController {
     }
 
     @Delete(':id')
-    deleteById(@Param('id') id: number): Promise<void> {
+    async deleteById(@Param('id') id: number): Promise<{ deleted: boolean; id?: number }> {
         return this.eventService.deleteById(id);
     }
+
 
     @Post('mergeAll/:userId')
     async mergeAll(@Param('userId') userId: number): Promise<Event[]> {

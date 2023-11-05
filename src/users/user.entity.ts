@@ -9,9 +9,10 @@ export class User {
     @Column({ type: 'varchar', nullable: false })
     name: string;
 
-    @Column('simple-array')
+    @Column({ type: 'simple-array', nullable: true})
     events: string[];
-
+/*
     @ManyToMany(() => Event, event => event.invitees)
     invitedEvents: Event[]; // create relational mapping to Event
+    */
 }

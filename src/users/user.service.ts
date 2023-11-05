@@ -25,15 +25,26 @@ export class UserService {
         return this.userRepository.findOne({ where: { id: id } });
     }
 
-    async create(createUserDto: CreateUserDto): Promise<User> {
-        const newUser = this.userRepository.create(createUserDto);
-        return this.userRepository.save(newUser);
+    async findUsersByIds(ids: number[]): Promise<User[]> {
+        return this.userRepository.createQueryBuilder("user")
+          .where("user.id IN (:...ids)", { ids })
+          .getMany();
     }
+
+    async create(createUserDto: CreateUserDto): Promise<User> {
+        const user = new User();
+        user.name = createUserDto.name;
+        user.events = []; // Set an empty array by default
+        console.log(`User with name ${createUserDto.name} created.`);
+        return this.userRepository.save(user);
+    }
+    
 
     async remove(id: number): Promise<void> {
         await this.userRepository.delete(id);
+        console.log(`User with ID ${id} deleted.`);
     }
-    
+
     async save(user: User): Promise<User> {
         return this.userRepository.save(user);
     }

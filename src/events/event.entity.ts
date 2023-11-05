@@ -37,7 +37,7 @@ export class Event {
     @Column({ type: 'datetime', nullable: true })
     endTime: Date;
 
-    @ManyToMany(() => User, user => user.invitedEvents)
-    @JoinTable() 
+    @ManyToMany(() => User)
+    @JoinTable()
     invitees: User[];
 }
